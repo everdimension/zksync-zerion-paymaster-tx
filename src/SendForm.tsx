@@ -12,12 +12,11 @@ import { PlainTransactionRequest } from './shared/types'
 import { signEip712Transaction } from './apis/eip712'
 import { VStack } from './shared/VStack'
 
-const PRIVATE_KEY = import.meta.env.VITE_PRIVATE_KEY
-invariant(PRIVATE_KEY, 'Private key must be placed in .env')
+const PRIVATE_KEY = import.meta.env.VITE_PRIVATE_KEY as string | undefined
 
 const GAS_PER_PUBDATA_BYTE_DEFAULT = ethers.toBeHex(50000)
 
-const wallet = new ethers.Wallet(PRIVATE_KEY)
+const wallet = PRIVATE_KEY ? new ethers.Wallet(PRIVATE_KEY) : null
 
 const nodeUrl = 'https://rpc.zerion.io/v1/zero'
 
@@ -76,10 +75,14 @@ function useGasPrices() {
   })
 }
 
-function useNonce(address: string) {
+function useNonce(address: string | null) {
   return useQuery({
+    enabled: Boolean(address),
     queryKey: ['getTransactionCount', address],
-    queryFn: () => provider.getTransactionCount(address),
+    queryFn: () => {
+      invariant(address)
+      return provider.getTransactionCount(address)
+    },
   })
 }
 
@@ -139,12 +142,12 @@ function usePaymasterEligibility(tx: PlainTransactionRequest | null) {
   })
 }
 
-export function SendForm() {
+function SendFormComponent() {
   const [formData, setFormData] = useState<null | FormData>(null)
   const tx = formData ? toTx(formData) : null
   const { data: gasLimit } = useGasLimit(tx)
   const { data: chainId } = useChainId()
-  const { data: nonce } = useNonce(wallet.address)
+  const { data: nonce } = useNonce(tx?.from ?? null)
   const { data: gasPrices } = useGasPrices()
   const eligibilityQuery = usePaymasterEligibility(tx)
   const paymasterEligible = eligibilityQuery.data?.data.eligible
@@ -153,6 +156,7 @@ export function SendForm() {
     mutationFn: async (tx: PlainTransactionRequest) => {
       const transaction = toPaymasterParamsParam(tx)
       const paymasterParamsResponse = await getPaymasterParams({ transaction })
+      invariant(wallet)
       invariant(
         paymasterParamsResponse.data.eligible,
         'Not eligible for a sponsored tx',
@@ -186,7 +190,7 @@ export function SendForm() {
         }}
       >
         <input type="hidden" name="chainId" value={chainId} />
-        <input type="hidden" name="from" value={wallet.address} />
+        <input type="hidden" name="from" value={wallet?.address} />
         <input type="hidden" name="nonce" value={nonce} />
         <input type="hidden" name="data" value="0x" />
         <input
@@ -259,4 +263,20 @@ export function SendForm() {
       </form>
     </div>
   )
+}
+
+export function SendForm() {
+  if (!wallet) {
+    return (
+      <div>
+        <h2>No PRIVATE_KEY found</h2>
+        <p>
+          To test this app, put private key in <code>.env</code> file. Then
+          re-run this app.
+        </p>
+      </div>
+    )
+  } else {
+    return <SendFormComponent />
+  }
 }
