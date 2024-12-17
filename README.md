@@ -14,6 +14,9 @@ npm install
 ### Create .env file
 
 1. Create `.env` file
+   ```
+   VITE_PRIVATE_KEY=<private_key>
+   ```
 2. Put private key there under `VITE_PRIVATE_KEY` name
 
 ### Run project

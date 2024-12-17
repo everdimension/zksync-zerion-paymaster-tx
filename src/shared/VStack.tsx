@@ -3,5 +3,11 @@ export function VStack({
   gap,
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { gap: number }) {
-  return <div style={{ display: 'grid', gap, ...style }} {...props} />
+  return (
+    <div
+      className="v-stack"
+      style={{ display: 'grid', gap, ...style }}
+      {...props}
+    />
+  )
 }

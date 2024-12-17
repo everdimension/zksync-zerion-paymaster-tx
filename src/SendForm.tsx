@@ -189,9 +189,9 @@ function SendFormComponent() {
           }
         }}
       >
-        <input type="hidden" name="chainId" value={chainId} />
-        <input type="hidden" name="from" value={wallet?.address} />
-        <input type="hidden" name="nonce" value={nonce} />
+        <input type="hidden" name="chainId" value={chainId || ''} />
+        <input type="hidden" name="from" value={wallet?.address ?? ''} />
+        <input type="hidden" name="nonce" value={nonce ?? ''} />
         <input type="hidden" name="data" value="0x" />
         <input
           type="hidden"
@@ -229,6 +229,9 @@ function SendFormComponent() {
                 name="valueCommon"
                 placeholder="amount"
                 defaultValue="0.001"
+                // floats
+                pattern="(\d+\.)?\d+"
+                required={true}
               />
             </label>
           </div>
